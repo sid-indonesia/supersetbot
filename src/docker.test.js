@@ -14,17 +14,6 @@ afterEach(() => {
   delete process.env.TEST_ENV;
 });
 
-describe('isLatestRelease', () => {
-  test.each([
-    ['2.1.0', false],
-    ['2.1.1', true],
-    ['1.0.0', false],
-    ['3.0.0', true],
-  ])('returns %s for release %s', (release, expectedBool) => {
-    expect(dockerUtils.isLatestRelease(release)).toBe(expectedBool);
-  });
-});
-
 describe('getDockerTags', () => {
   test.each([
     // PRs

@@ -111,3 +111,41 @@ export function shuffleArray(originalArray) {
   }
   return array;
 }
+
+export function parsePinnedRequirements(requirements) {
+  const lines = requirements.split('\n');
+  const depsObject = {};
+
+  let currentDep = null;
+  lines.forEach((line) => {
+    if (line.startsWith('# via')) {
+      const via = line.replace('# via', '').trim();
+      const vias = via.split(',').map((v) => v.trim());
+      vias.forEach((viaItem) => {
+        if (!depsObject[viaItem]) {
+          depsObject[viaItem] = [];
+        }
+        if (currentDep && !depsObject[viaItem].includes(currentDep)) {
+          depsObject[viaItem].push(currentDep);
+        }
+      });
+    } else if (line.trim()) {
+      const depMatch = line.match(/^(.+)==/);
+      if (depMatch) {
+        currentDep = depMatch[1].trim();
+      }
+    }
+  });
+
+  return depsObject;
+}
+
+export function mergeParsedRequirements(obj1, obj2) {
+  const keys = new Set([...Object.keys(obj1), ...Object.keys(obj2)]);
+  const merged = {};
+
+  keys.forEach((key) => {
+    merged[key] = [...new Set([...(obj1[key] || []), ...(obj2[key] || [])])];
+  });
+  return merged;
+}

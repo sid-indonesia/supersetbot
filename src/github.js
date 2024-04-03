@@ -7,7 +7,11 @@ import { Octokit } from '@octokit/rest';
 import { throttling } from '@octokit/plugin-throttling';
 
 import { ORG_LIST, PROTECTED_LABEL_PATTERNS, COMMITTER_TEAM } from './metadata.js';
-import { runShellCommand, shuffleArray } from './utils.js';
+import {
+  runShellCommand, shuffleArray, parsePinnedRequirements, mergeParsedRequirements,
+} from './utils.js';
+
+const reqsFiles = ['requirements/base.txt', 'requirements/development.txt'];
 
 class Github {
   #userInTeamCache;
@@ -46,6 +50,30 @@ class Github {
   unPackRepo() {
     const [owner, repo] = this.context.repo.split('/');
     return { repo, owner };
+  }
+
+  async getLatestReleaseTag() {
+    const tags = await this.octokit.rest.repos.listTags({
+      ...this.unPackRepo(),
+    });
+
+    // Simple SemVer regex
+    const simpleSemverRegex = /^\d+\.\d+\.\d+$/;
+    // Date-like pattern regex to exclude (e.g., 2020.01.01)
+    const dateLikeRegex = /^\d{4}\.\d{2}\.\d{2}$/;
+
+    const validTags = tags.data.filter(
+      (tag) => simpleSemverRegex.test(tag.name) && !dateLikeRegex.test(tag.name),
+    ).map((tag) => tag.name);
+
+    // Sort tags in descending order (latest first)
+    validTags.sort((a, b) => {
+      if (a === b) return 0;
+      return a > b ? -1 : 1;
+    });
+
+    // Return the latest valid semver tag
+    return validTags[0];
   }
 
   async label(issueNumber, label, actor = null, verbose = false, dryRun = false) {
@@ -256,7 +284,7 @@ class Github {
 
   async createAllBumpPRs({
     verbose = false, dryRun = false, useCurrentRepo = false, limit = null, shuffle = true,
-    group = null,
+    group = null, includeSubPackages = false,
   }) {
     const cwd = process.cwd();
     const tomlFilePath = path.join(cwd, 'pyproject.toml');
@@ -274,6 +302,16 @@ class Github {
         deps = Object.keys(optDeps).flatMap((k) => optDeps[k]);
       } else {
         deps = optDeps[group];
+      }
+    }
+    if (includeSubPackages) {
+      let subPackages = {};
+      /* eslint-disable no-restricted-syntax, no-await-in-loop */
+      for (const reqsFile of reqsFiles) {
+        const reqsFilePath = path.join(cwd, reqsFile);
+        const reqsData = await fs.promises.readFile(reqsFilePath, 'utf8');
+        const pinnedReqs = parsePinnedRequirements(reqsData);
+        subPackages = mergeParsedRequirements(subPackages, pinnedReqs);
       }
     }
     if (shuffle) {
@@ -397,8 +435,9 @@ class Github {
 
     // Run pip-compile-multi
     await runShellCommand({ command: `pip-compile-multi --use-cache -P ${lib}`, ...shellOptions });
-    await this.fixReqsFile(path.join(shellOptions.cwd, 'requirements/base.txt'));
-    await this.fixReqsFile(path.join(shellOptions.cwd, 'requirements/development.txt'));
+    for (const reqsFile of reqsFiles) {
+      await this.fixReqsFile(path.join(shellOptions.cwd, reqsFile));
+    }
 
     // Diffing
     let rawDiff = await runShellCommand({ command: 'git diff --color=never --unified=0', ...shellOptions });

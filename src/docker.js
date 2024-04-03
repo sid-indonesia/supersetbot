@@ -1,4 +1,5 @@
 import { spawnSync } from 'child_process';
+import GitHub from './github.js';
 
 const REPO = 'apache/superset';
 const CACHE_REPO = `${REPO}-cache`;
@@ -32,22 +33,18 @@ function getBuildContextRef(buildContext) {
   return '';
 }
 
-export function isLatestRelease(release) {
-  const output = runCmd(`../../scripts/tag_latest_release.sh ${release} --dry-run`, false) || '';
-  return output.includes('SKIP_TAG::false');
-}
-
 function makeDockerTag(parts) {
   return `${REPO}:${parts.filter((part) => part).join('-')}`;
 }
 
 export function getDockerTags({
-  preset, platforms, sha, buildContext, buildContextRef, forceLatest = false,
+  preset, platforms, sha, buildContext, buildContextRef, forceLatest = false, latestRelease = null,
 }) {
   const tags = new Set();
   const tagChunks = [];
 
-  const isLatest = isLatestRelease(buildContextRef);
+  const currentRelease = buildContext === "release" ? buildContextRef : null;
+  const isLatest = latestRelease === currentRelease;
 
   if (preset !== 'lean') {
     tagChunks.push(preset);
@@ -79,7 +76,7 @@ export function getDockerTags({
 }
 
 export function getDockerCommand({
-  preset, platform, buildContext, buildContextRef, forceLatest = false,
+  preset, platform, buildContext, buildContextRef, forceLatest = false, latestRelease = null,
 }) {
   const platforms = platform;
 
@@ -111,7 +108,7 @@ export function getDockerCommand({
   }
   const sha = getGitSha();
   const tags = getDockerTags({
-    preset, platforms, sha, buildContext, buildContextRef: ref, forceLatest,
+    preset, platforms, sha, buildContext, buildContextRef: ref, forceLatest, latestRelease,
   }).map((tag) => `-t ${tag}`).join(' \\\n        ');
   const isAuthenticated = !!(process.env.DOCKERHUB_TOKEN);
 

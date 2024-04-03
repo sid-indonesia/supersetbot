@@ -180,7 +180,9 @@ export default function getCLI(context) {
       .action(function () {
         const opts = context.processOptions(this, ['preset']);
         opts.platform = opts.platform || ['linux/arm64'];
-        const command = docker.getDockerCommand({ ...opts });
+        const github = new Github({ context });
+        const latestRelease = github.getLatestRelease();
+        const command = docker.getDockerCommand({ ...opts, latestRelease });
         context.log(command);
         if (!opts.dryRun) {
           utils.runShellCommand({ command, raiseOnError: false });
