@@ -64,7 +64,6 @@ export default function getCLI(context) {
       await github.assignOrgLabel(opts.issue, opts.verbose, opts.dryRun);
     });
 
-
   program.command('release-label-pr <prId>')
     .description('Figure out first release for PR and label it')
     .addOption(excludeCherriesOption)
