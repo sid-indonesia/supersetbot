@@ -286,11 +286,15 @@ class Github {
     for (const libRange of deps) {
       const pythonPackage = libRange.match(/^[^>=<;[\s]+/)[0];
       console.log(`Processing library: ${pythonPackage}`);
-      const url = await this.createBumpLibPullRequest({
-        pythonPackage, verbose, dryRun, useCurrentRepo,
-      });
-      if (url) {
-        prsCreated += 1;
+      try {
+        const url = await this.createBumpLibPullRequest({
+          pythonPackage, verbose, dryRun, useCurrentRepo,
+        });
+        if (url) {
+          prsCreated += 1;
+        }
+      } catch (error) {
+        console.error(`Error creating PR for "${pythonPackage}":`, error);
       }
       if (limit && prsCreated >= limit) {
         break;
