@@ -1,7 +1,4 @@
 {
-  "transform": {
-    "\\.[jt]sx?$": "babel-jest"
-  },
-  "testRegex": "dist/.*\\.test\\.js$",
+  "transform": {},
   "testEnvironment": "node"
 }
