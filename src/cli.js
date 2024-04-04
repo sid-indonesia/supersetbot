@@ -177,11 +177,11 @@ export default function getCLI(context) {
       .option('-p, --platform <platform...>', 'Platforms (multiple values allowed)')
       .option('-f, --force-latest', 'Force the "latest" tag on the release')
       .option('-v, --verbose', 'Print more info')
-      .action(function () {
-        const opts = context.processOptions(this, ['preset']);
+      .action(async function () {
+        const opts = context.processOptions(this, ['preset', 'repo']);
         opts.platform = opts.platform || ['linux/arm64'];
         const github = new Github({ context });
-        const latestRelease = github.getLatestRelease();
+        const latestRelease = await github.getLatestReleaseTag();
         const command = docker.getDockerCommand({ ...opts, latestRelease });
         context.log(command);
         if (!opts.dryRun) {

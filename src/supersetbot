@@ -21,7 +21,7 @@
 import getCLI from './cli.js';
 import Context from './context.js';
 import Github from './github.js';
-import { runCommandFromGithubAction } from './utils.js';
+import { runCommandFromGithubAction } from './index.js';
 
 const envContext = new Context('CLI');
 const cli = getCLI(envContext);

@@ -113,26 +113,25 @@ export function shuffleArray(originalArray) {
 }
 
 export function parsePinnedRequirements(requirements) {
-  const lines = requirements.split('\n');
-  const depsObject = {};
+  const lines = requirements
+    .split('\n')
+    .map((line) => line.trim().toLowerCase())
+    .filter((line) => !!line);
 
+  const depsObject = {};
   let currentDep = null;
+
   lines.forEach((line) => {
-    if (line.startsWith('# via')) {
-      const via = line.replace('# via', '').trim();
-      const vias = via.split(',').map((v) => v.trim());
-      vias.forEach((viaItem) => {
-        if (!depsObject[viaItem]) {
-          depsObject[viaItem] = [];
+    const depMatch = line.match(/^(.+)==/);
+    if (depMatch) {
+      currentDep = depMatch[1].trim();
+    } else {
+      const viaLib = line.replace('# via', '').trim().replace('#', '').trim();
+      if (viaLib) {
+        if (!depsObject[viaLib]) {
+          depsObject[viaLib] = [];
         }
-        if (currentDep && !depsObject[viaItem].includes(currentDep)) {
-          depsObject[viaItem].push(currentDep);
-        }
-      });
-    } else if (line.trim()) {
-      const depMatch = line.match(/^(.+)==/);
-      if (depMatch) {
-        currentDep = depMatch[1].trim();
+        depsObject[viaLib].push(currentDep);
       }
     }
   });

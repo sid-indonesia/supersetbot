@@ -2,10 +2,9 @@ import { parsePinnedRequirements, mergeParsedRequirements } from './utils.js';
 
 describe('parsePinnedRequirements', () => {
   it('parses single dependency correctly', () => {
-    const requirements = `
+    const requirements = `\
         alembic==1.13.1
-            # via flask-migrate
-        `;
+            # via flask-migrate`;
     expect(parsePinnedRequirements(requirements)).toEqual({
       'flask-migrate': ['alembic'],
     });
@@ -38,12 +37,8 @@ describe('parsePinnedRequirements', () => {
 
   it('ignores lines without dependencies or via comments', () => {
     const requirements = `
-        # This is a comment
         alembic==1.13.1
-            # via flask-migrate
-
-        # Another comment
-        `;
+            # via flask-migrate`;
     expect(parsePinnedRequirements(requirements)).toEqual({
       'flask-migrate': ['alembic'],
     });

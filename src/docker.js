@@ -1,5 +1,4 @@
 import { spawnSync } from 'child_process';
-import GitHub from './github.js';
 
 const REPO = 'apache/superset';
 const CACHE_REPO = `${REPO}-cache`;
@@ -43,7 +42,7 @@ export function getDockerTags({
   const tags = new Set();
   const tagChunks = [];
 
-  const currentRelease = buildContext === "release" ? buildContextRef : null;
+  const currentRelease = buildContext === 'release' ? buildContextRef : null;
   const isLatest = latestRelease === currentRelease;
 
   if (preset !== 'lean') {
