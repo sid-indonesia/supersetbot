@@ -52,19 +52,29 @@ class Github {
     return { repo, owner };
   }
 
-  async getLatestReleaseTag() {
-    const tags = await this.octokit.rest.repos.listTags({
+  async getAllTags() {
+    const options = this.octokit.rest.repos.listTags.endpoint.merge({
       ...this.unPackRepo(),
+      per_page: 100,
     });
+
+    const tags = await this.octokit.paginate(options);
+
+    return tags;
+  }
+
+  async getLatestReleaseTag() {
+    const tags = await this.getAllTags();
+    const tagNames = tags.map((tag) => tag.name);
 
     // Simple SemVer regex
     const simpleSemverRegex = /^\d+\.\d+\.\d+$/;
     // Date-like pattern regex to exclude (e.g., 2020.01.01)
     const dateLikeRegex = /^\d{4}\.\d{2}\.\d{2}$/;
 
-    const validTags = tags.data.filter(
-      (tag) => simpleSemverRegex.test(tag.name) && !dateLikeRegex.test(tag.name),
-    ).map((tag) => tag.name);
+    const validTags = tagNames.filter(
+      (tag) => simpleSemverRegex.test(tag) && !dateLikeRegex.test(tag),
+    );
 
     // Sort tags in descending order (latest first)
     validTags.sort((a, b) => {

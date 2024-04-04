@@ -1,3 +1,4 @@
+import { jest } from '@jest/globals';
 import * as dockerUtils from './docker.js';
 
 const SHA = '22e7c602b9aa321ec7e0df4bb0033048664dcdf0';
@@ -5,6 +6,8 @@ const PR_ID = '666';
 const OLD_REL = '2.1.0';
 const NEW_REL = '2.1.1';
 const REPO = 'apache/superset';
+
+jest.mock('./github.js', () => jest.fn().mockImplementation(() => NEW_REL));
 
 beforeEach(() => {
   process.env.TEST_ENV = 'true';
@@ -186,7 +189,7 @@ describe('getDockerTags', () => {
 
   ])('returns expected tags', (preset, platforms, sha, buildContext, buildContextRef, expectedTags) => {
     const tags = dockerUtils.getDockerTags({
-      preset, platforms, sha, buildContext, buildContextRef,
+      preset, platforms, sha, buildContext, buildContextRef, latestRelease: NEW_REL,
     });
     expect(tags).toEqual(expect.arrayContaining(expectedTags));
   });
@@ -197,16 +200,14 @@ describe('getDockerCommand', () => {
     [
       'lean',
       ['linux/amd64'],
-      true,
       SHA,
       'push',
       'master',
-      ['--push', `-t ${REPO}:master `],
+      [`-t ${REPO}:master `],
     ],
     [
       'dev',
       ['linux/amd64'],
-      false,
       SHA,
       'push',
       'master',
@@ -216,15 +217,14 @@ describe('getDockerCommand', () => {
     [
       'lean',
       ['linux/arm64', 'linux/amd64'],
-      true,
       SHA,
       'push',
       'master',
       ['--platform linux/arm64,linux/amd64'],
     ],
-  ])('returns expected docker command', (preset, platform, isAuthenticated, sha, buildContext, buildContextRef, contains) => {
+  ])('returns expected docker command', (preset, platform, sha, buildContext, buildContextRef, contains) => {
     const cmd = dockerUtils.getDockerCommand({
-      preset, platform, isAuthenticated, sha, buildContext, buildContextRef,
+      preset, platform, sha, buildContext, buildContextRef, latestRelease: NEW_REL,
     });
     contains.forEach((expectedSubstring) => {
       expect(cmd).toContain(expectedSubstring);

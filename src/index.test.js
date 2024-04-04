@@ -1,3 +1,4 @@
+import { jest } from '@jest/globals';
 import Context from './context.js';
 import Github from './github.js';
 
