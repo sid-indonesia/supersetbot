@@ -13,12 +13,12 @@ jobs:
     - uses: actions/checkout@v2 # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
 
     - name: Setup Node
-      uses: actions/setup-node@v2
+      uses: actions/setup-node@v4
       with:
         node-version: "20"
 
     - name: Install dependencies
-      run: npm ci # If you have a package-lock.json, use `npm ci` instead of `npm install` for faster installation
+      run: npm install
 
     - name: Run tests
       run: npm run lint
