@@ -326,7 +326,12 @@ class Github {
     const tomlFilePath = path.join(cwd, 'pyproject.toml');
 
     // Parse dependencies from pyproject.yml
-    const data = await fs.promises.readFile(tomlFilePath, 'utf8');
+    try {
+      const data = await fs.promises.readFile(tomlFilePath, 'utf8');
+    } catch (error) {
+      console.error('Error reading ./pyproject.toml');
+      process.exit(1);
+    }
     const parsedData = toml.parse(data);
 
     let prsCreated = 0;
