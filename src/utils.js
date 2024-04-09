@@ -115,6 +115,8 @@ export function shuffleArray(originalArray) {
 export function parsePinnedRequirements(requirements) {
   const lines = requirements
     .split('\n')
+    .filter((line) => !line.startsWith('#')) // this removes comments at the top/bottom but not vias since they are indented
+    .filter((line) => !line.startsWith('-')) // this removes funky lines refing other files
     .map((line) => line.trim().toLowerCase())
     .filter((line) => !!line);
 

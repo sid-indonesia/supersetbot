@@ -62,13 +62,15 @@ export function getDockerTags({
 
   if (buildContext === 'release') {
     tags.add(makeDockerTag([buildContextRef, ...tagChunks]));
-    if (isLatest || forceLatest) {
-      tags.add(makeDockerTag(['latest', ...tagChunks]));
-    }
   } else if (buildContext === 'push' && buildContextRef === 'master') {
     tags.add(makeDockerTag(['master', ...tagChunks]));
   } else if (buildContext === 'pull_request') {
     tags.add(makeDockerTag([`pr-${buildContextRef}`, ...tagChunks]));
+  }
+  if (isLatest || forceLatest) {
+    console.log(`Tags: ${[...tags].join(', ')}`);
+    tags.add(makeDockerTag(['latest', ...tagChunks]));
+    console.log("MAKE", makeDockerTag(['latest', ...tagChunks]));
   }
 
   return [...tags];
@@ -119,6 +121,7 @@ export function getDockerCommand({
   const cacheToArg = isAuthenticated ? `--cache-to=type=registry,mode=max,ref=${cacheRef}` : '';
   const buildArg = pyVer ? `--build-arg PY_VER=${pyVer}` : '';
   const actor = process.env.GITHUB_ACTOR;
+  const versionLabel = buildContext === 'release' ? `--label version=${buildContextRef}` : '';
 
   return `docker buildx build \\
       ${dockerArgs} \\
@@ -133,6 +136,7 @@ export function getDockerCommand({
       --label build_trigger=${ref} \\
       --label base=${pyVer} \\
       --label build_actor=${actor} \\
+      ${versionLabel} \\
       ${dockerContext}
   `;
 }

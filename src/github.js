@@ -15,6 +15,7 @@ const reqsFiles = ['requirements/base.txt', 'requirements/development.txt'];
 
 class Github {
   #userInTeamCache;
+  #packageTree;
 
   constructor({ context, issueNumber = null, token = null }) {
     this.context = context;
@@ -292,9 +293,34 @@ class Github {
     return PROTECTED_LABEL_PATTERNS.some((pattern) => new RegExp(pattern).test(label));
   }
 
+  async getSubPackageTree() {
+    if (this.#packageTree) {
+      return this.#packageTree;
+    }
+    let subPackages = {};
+    const cwd = process.cwd();
+    /* eslint-disable no-restricted-syntax, no-await-in-loop */
+    for (const reqsFile of reqsFiles) {
+      const reqsFilePath = path.join(cwd, reqsFile);
+      const reqsData = await fs.promises.readFile(reqsFilePath, 'utf8');
+      const pinnedReqs = parsePinnedRequirements(reqsData);
+      subPackages = mergeParsedRequirements(subPackages, pinnedReqs);
+    }
+    this.#packageTree = subPackages;
+    return subPackages;
+  }
+  async allDescendantPackages(parent) {
+    const tree = await this.getSubPackageTree();
+    let descendants = [];
+    for (const child of tree[parent] || []) {
+      descendants = [...new Set([...descendants, ...(await this.allDescendantPackages(child))])];
+    }
+    return [parent, ...descendants];
+  }
+
   async createAllBumpPRs({
     verbose = false, dryRun = false, useCurrentRepo = false, limit = null, shuffle = true,
-    group = null, includeSubPackages = false,
+    group = null, includeSubpackages = false,
   }) {
     const cwd = process.cwd();
     const tomlFilePath = path.join(cwd, 'pyproject.toml');
@@ -314,29 +340,20 @@ class Github {
         deps = optDeps[group];
       }
     }
-    if (includeSubPackages) {
-      let subPackages = {};
-      /* eslint-disable no-restricted-syntax, no-await-in-loop */
-      for (const reqsFile of reqsFiles) {
-        const reqsFilePath = path.join(cwd, reqsFile);
-        const reqsData = await fs.promises.readFile(reqsFilePath, 'utf8');
-        const pinnedReqs = parsePinnedRequirements(reqsData);
-        subPackages = mergeParsedRequirements(subPackages, pinnedReqs);
-      }
-    }
     if (shuffle) {
       deps = shuffleArray(deps);
     }
+
     console.log('Processing libraries:', deps);
 
-    // Assuming dependencies is an array; if it's an object, you'll need to adjust this.
     /* eslint-disable no-restricted-syntax, no-await-in-loop */
     for (const libRange of deps) {
       const pythonPackage = libRange.match(/^[^>=<;[\s]+/)[0];
+      let packageSet = [pythonPackage];
       console.log(`Processing library: ${pythonPackage}`);
       try {
         const url = await this.createBumpLibPullRequest({
-          pythonPackage, verbose, dryRun, useCurrentRepo,
+          pythonPackage, verbose, dryRun, useCurrentRepo, includeSubpackages,
         });
         if (url) {
           prsCreated += 1;
@@ -421,10 +438,9 @@ class Github {
   }
 
   async createBumpLibPullRequest({
-    pythonPackage, verbose = false, dryRun = false, useCurrentRepo = false,
+    pythonPackage, verbose = false, dryRun = false, useCurrentRepo = false, includeSubpackages = false,
   }) {
     const cwd = './';
-    const lib = pythonPackage.toLowerCase();
     const shellOptions = {
       cwd, verbose, raiseOnError: true, exitOnError: false,
     };
@@ -444,7 +460,19 @@ class Github {
     }
 
     // Run pip-compile-multi
-    await runShellCommand({ command: `pip-compile-multi --use-cache -P ${lib}`, ...shellOptions });
+    let pythonPackages = [pythonPackage];
+    if (includeSubpackages) {
+      pythonPackages = await this.allDescendantPackages(pythonPackage);
+    }
+    console.log('Packages to bump', pythonPackages);
+    for (const lib of pythonPackages) {
+      try {
+        await runShellCommand({ command: `pip-compile-multi --use-cache -P ${lib}`, ...shellOptions });
+      }
+      catch (error) {
+        console.error(`Error bumping "${lib}":`, error);
+      }
+    }
     for (const reqsFile of reqsFiles) {
       await this.fixReqsFile(path.join(shellOptions.cwd, reqsFile));
     }
@@ -454,18 +482,27 @@ class Github {
     rawDiff = rawDiff.stdout;
 
     const libsBeforeAfter = this.processPythonReqsDiffOutput(rawDiff);
-    const before = libsBeforeAfter[lib]?.before;
-    const after = libsBeforeAfter[lib]?.after;
-
     if (verbose && rawDiff) {
       console.log('Diff:', rawDiff);
       console.log('Libs before/after:', libsBeforeAfter);
     }
 
-    if (before === after) {
-      console.log('No changes detected... skipping.');
-    } else {
-      console.log(`Changes detected for "${lib}": ${before} -> ${after}`);
+    let hasChanges = false;
+    for (const lib of pythonPackages) {
+      const { before = null, after = null} = libsBeforeAfter[lib] || {};
+      if (before !== after) {
+        hasChanges = true;
+        console.log(`Changes detected for "${lib}": ${before} -> ${after}`);
+      }
+    }
+    if (hasChanges) {
+      const lib = pythonPackage;;
+      const { before = null, after = null} = libsBeforeAfter[lib] || {};
+
+      let commitMessage = `chore(🦾): bump python ${lib} ${before} -> ${after}`;
+      if (before && before === after) {
+        let commitMessage = `chore(🦾): bump python ${lib} subpackage(s)`;
+      }
 
       // Create branch
       const branchName = `supersetbot-bump-${lib}`;
@@ -473,11 +510,11 @@ class Github {
 
       // Commit changes
       await runShellCommand({ command: 'git add .', ...shellOptions });
-      const commitMessage = `chore(🦾): bump python ${lib} ${before} -> ${after}`;
       await runShellCommand({ command: `git commit -m "${commitMessage}"`, ...shellOptions });
 
       if (dryRun) {
         console.log(`Skipping PR creation for "${lib}" due to dry-run mode.`);
+        console.log(`PR title would have been: ${commitMessage}`);
       } else {
         // Push changes
         await runShellCommand({ command: `git push -f origin ${branchName}`, ...shellOptions });
@@ -495,7 +532,6 @@ class Github {
             console.log(`Pull request created: ${resp.data.html_url}`);
 
             const prNumber = resp.data.number;
-
             // Labeling the PR
             await this.octokit.issues.addLabels({
               ...this.unPackRepo(),
