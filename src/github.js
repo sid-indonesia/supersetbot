@@ -457,7 +457,7 @@ class Github {
       }
 
       // Clone the repo
-      await runShellCommand({ command: `git clone --depth 1 git@github.com:${this.context.repo}.git ${shellOptions.cwd}`, ...shellOptions });
+      await runShellCommand({ command: `GIT_LFS_SKIP_SMUDGE=1 git clone --depth 1 git@github.com:${this.context.repo}.git ${shellOptions.cwd}`, ...shellOptions });
     } else {
       await runShellCommand({ command: 'git checkout master', ...shellOptions });
       await runShellCommand({ command: 'git reset --hard', ...shellOptions });
@@ -505,8 +505,8 @@ class Github {
       const { before = null, after = null} = libsBeforeAfter[lib] || {};
 
       let commitMessage = `chore(🦾): bump python ${lib} ${before} -> ${after}`;
-      if (before && before === after) {
-        let commitMessage = `chore(🦾): bump python ${lib} subpackage(s)`;
+      if (before === null || before === after) {
+        commitMessage = `chore(🦾): bump python ${lib} subpackage(s)`;
       }
 
       // Create branch
