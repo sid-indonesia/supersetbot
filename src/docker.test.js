@@ -26,6 +26,7 @@ describe('getDockerTags', () => {
       SHA,
       'pull_request',
       PR_ID,
+      false,
       [`${REPO}:22e7c60-arm`, `${REPO}:${SHA}-arm`, `${REPO}:pr-${PR_ID}-arm`],
     ],
     [
@@ -34,6 +35,7 @@ describe('getDockerTags', () => {
       SHA,
       'pull_request',
       PR_ID,
+      false,
       [`${REPO}:22e7c60-ci`, `${REPO}:${SHA}-ci`, `${REPO}:pr-${PR_ID}-ci`],
     ],
     [
@@ -42,6 +44,7 @@ describe('getDockerTags', () => {
       SHA,
       'pull_request',
       PR_ID,
+      false,
       [`${REPO}:22e7c60`, `${REPO}:${SHA}`, `${REPO}:pr-${PR_ID}`],
     ],
     [
@@ -50,6 +53,7 @@ describe('getDockerTags', () => {
       SHA,
       'pull_request',
       PR_ID,
+      false,
       [
         `${REPO}:22e7c60-dev-arm`,
         `${REPO}:${SHA}-dev-arm`,
@@ -62,6 +66,7 @@ describe('getDockerTags', () => {
       SHA,
       'pull_request',
       PR_ID,
+      false,
       [`${REPO}:22e7c60-dev`, `${REPO}:${SHA}-dev`, `${REPO}:pr-${PR_ID}-dev`],
     ],
     // old releases
@@ -71,6 +76,7 @@ describe('getDockerTags', () => {
       SHA,
       'release',
       OLD_REL,
+      false,
       [`${REPO}:22e7c60-arm`, `${REPO}:${SHA}-arm`, `${REPO}:${OLD_REL}-arm`],
     ],
     [
@@ -79,6 +85,7 @@ describe('getDockerTags', () => {
       SHA,
       'release',
       OLD_REL,
+      false,
       [`${REPO}:22e7c60`, `${REPO}:${SHA}`, `${REPO}:${OLD_REL}`],
     ],
     [
@@ -87,6 +94,7 @@ describe('getDockerTags', () => {
       SHA,
       'release',
       OLD_REL,
+      false,
       [
         `${REPO}:22e7c60-dev-arm`,
         `${REPO}:${SHA}-dev-arm`,
@@ -99,6 +107,7 @@ describe('getDockerTags', () => {
       SHA,
       'release',
       OLD_REL,
+      false,
       [`${REPO}:22e7c60-dev`, `${REPO}:${SHA}-dev`, `${REPO}:${OLD_REL}-dev`],
     ],
     // new releases
@@ -108,6 +117,7 @@ describe('getDockerTags', () => {
       SHA,
       'release',
       NEW_REL,
+      false,
       [
         `${REPO}:22e7c60-arm`,
         `${REPO}:${SHA}-arm`,
@@ -121,6 +131,7 @@ describe('getDockerTags', () => {
       SHA,
       'release',
       NEW_REL,
+      false,
       [`${REPO}:22e7c60`, `${REPO}:${SHA}`, `${REPO}:${NEW_REL}`, `${REPO}:latest`],
     ],
     [
@@ -129,6 +140,7 @@ describe('getDockerTags', () => {
       SHA,
       'release',
       NEW_REL,
+      false,
       [
         `${REPO}:22e7c60-dev-arm`,
         `${REPO}:${SHA}-dev-arm`,
@@ -142,6 +154,7 @@ describe('getDockerTags', () => {
       SHA,
       'release',
       NEW_REL,
+      false,
       [
         `${REPO}:22e7c60-dev`,
         `${REPO}:${SHA}-dev`,
@@ -156,6 +169,7 @@ describe('getDockerTags', () => {
       SHA,
       'push',
       'master',
+      false,
       [`${REPO}:22e7c60-arm`, `${REPO}:${SHA}-arm`, `${REPO}:master-arm`],
     ],
     [
@@ -164,6 +178,7 @@ describe('getDockerTags', () => {
       SHA,
       'push',
       'master',
+      false,
       [`${REPO}:22e7c60`, `${REPO}:${SHA}`, `${REPO}:master`],
     ],
     [
@@ -172,6 +187,7 @@ describe('getDockerTags', () => {
       SHA,
       'push',
       'master',
+      false,
       [
         `${REPO}:22e7c60-dev-arm`,
         `${REPO}:${SHA}-dev-arm`,
@@ -184,12 +200,23 @@ describe('getDockerTags', () => {
       SHA,
       'push',
       'master',
+      false,
       [`${REPO}:22e7c60-dev`, `${REPO}:${SHA}-dev`, `${REPO}:master-dev`],
     ],
 
-  ])('returns expected tags', (preset, platforms, sha, buildContext, buildContextRef, expectedTags) => {
+    [
+      'lean',
+      ['linux/amd64'],
+      SHA,
+      'release',
+      '4.0.0',
+      true,
+      [`${REPO}:latest`, `${REPO}:4.0.0`],
+    ],
+
+  ])('returns expected tags', (preset, platforms, sha, buildContext, buildContextRef, forceLatest, expectedTags) => {
     const tags = dockerUtils.getDockerTags({
-      preset, platforms, sha, buildContext, buildContextRef, latestRelease: NEW_REL,
+      preset, platforms, sha, buildContext, buildContextRef, latestRelease: NEW_REL, forceLatest,
     });
     expect(tags).toEqual(expect.arrayContaining(expectedTags));
   });
