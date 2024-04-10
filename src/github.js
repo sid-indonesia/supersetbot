@@ -378,6 +378,8 @@ class Github {
     const shellOptions = {
       verbose, raiseOnError: true, exitOnError: false,
     };
+    await runShellCommand({ command: 'git config --local user.name "GitHub Action"', ...shellOptions });
+    await runShellCommand({ command: 'git config --local user.email "action@github.com"', ...shellOptions });
     await runShellCommand({ command: 'git pull --rebase origin master', ...shellOptions });
     await runShellCommand({ command: 'git push', ...shellOptions });
   }
