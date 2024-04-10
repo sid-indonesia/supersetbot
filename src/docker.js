@@ -33,7 +33,6 @@ export function getDockerTags({
 }) {
   const tags = new Set();
   const tagChunks = [];
-
   const currentRelease = buildContext === 'release' ? buildContextRef : null;
   const isLatest = latestRelease === currentRelease;
 

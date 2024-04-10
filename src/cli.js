@@ -192,8 +192,10 @@ export default function getCLI(context) {
         const opts = context.processOptions(this, ['preset', 'repo']);
         opts.platform = opts.platform || ['linux/arm64'];
         const github = new Github({ context });
+        const buildContext = opts.context;
+        const buildContextRef = opts.contextRef;
         const latestRelease = await github.getLatestReleaseTag();
-        const command = await docker.getDockerCommand({ ...opts, latestRelease });
+        const command = await docker.getDockerCommand({ ...opts, buildContext, buildContextRef, latestRelease });
         context.log(command);
         if (!opts.dryRun) {
           utils.runShellCommand({ command, raiseOnError: false });
