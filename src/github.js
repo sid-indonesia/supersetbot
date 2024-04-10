@@ -24,7 +24,7 @@ class Github {
     if (!githubToken) {
       const msg = 'GITHUB_TOKEN is not set';
       this.context.logError(msg);
-      //this.context.exit(1);
+      this.context.exit(1);
     }
     const throttledOctokit = Octokit.plugin(throttling);
     // eslint-disable-next-line new-cap
@@ -332,7 +332,7 @@ class Github {
       data = await fs.promises.readFile(tomlFilePath, 'utf8');
     } catch (error) {
       console.error('Error reading ./pyproject.toml');
-      process.exit(1);
+      this.context.exit(1);
     }
     const parsedData = toml.parse(data);
 
@@ -372,6 +372,14 @@ class Github {
         break;
       }
     }
+  }
+
+  async rebase({ verbose = false }) {
+    const shellOptions = {
+      verbose, raiseOnError: true, exitOnError: false,
+    };
+    await runShellCommand({ command: 'git pull --rebase origin master', ...shellOptions });
+    await runShellCommand({ command: 'git push', ...shellOptions });
   }
 
   async searchExistingPRs(branchName) {

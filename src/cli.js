@@ -95,6 +95,16 @@ export default function getCLI(context) {
     });
 
   if (context.source === 'CLI') {
+    program.command('rebase')
+      .description('Rebase a PR')
+      .addOption(issueOption)
+      .action(async function () {
+        const opts = context.processOptions(this, ['issue', 'repo']);
+        const github = new Github({ context });
+        await github.rebase({ ...opts });
+      });
+  }
+  else if (context.source === 'CLI') {
     program.command('release-label-prs')
       .description('Given a set of PRs, auto-release label them')
       .option('-s, --search <search>', 'extra search string to append using the GitHub mini-language')
