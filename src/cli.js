@@ -94,7 +94,7 @@ export default function getCLI(context) {
       context.log(version);
     });
 
-  if (context.source === 'CLI') {
+  if (context.source === 'GHA') {
     program.command('rebase')
       .description('Rebase a PR')
       .addOption(issueOption)
