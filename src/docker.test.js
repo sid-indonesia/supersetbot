@@ -249,7 +249,7 @@ describe('getDockerCommand', () => {
       'master',
       ['--platform linux/arm64,linux/amd64'],
     ],
-  ])('returns expected docker command', (preset, platform, sha, buildContext, buildContextRef, contains) => {
+  ])('returns expected docker command', async (preset, platform, sha, buildContext, buildContextRef, contains) => {
     const cmd = await dockerUtils.getDockerCommand({
       preset, platform, sha, buildContext, buildContextRef, latestRelease: NEW_REL,
     });

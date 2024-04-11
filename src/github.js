@@ -9,12 +9,14 @@ import { throttling } from '@octokit/plugin-throttling';
 import { ORG_LIST, PROTECTED_LABEL_PATTERNS, COMMITTER_TEAM } from './metadata.js';
 import {
   runShellCommand, shuffleArray, parsePinnedRequirements, mergeParsedRequirements,
+  compareSemVer,
 } from './utils.js';
 
 const reqsFiles = ['requirements/base.txt', 'requirements/development.txt'];
 
 class Github {
   #userInTeamCache;
+
   #packageTree;
 
   constructor({ context, issueNumber = null, token = null }) {
@@ -72,17 +74,14 @@ class Github {
     // Simple SemVer regex
     const simpleSemverRegex = /^\d+\.\d+\.\d+$/;
     // Date-like pattern regex to exclude (e.g., 2020.01.01)
-    const dateLikeRegex = /^\d{4}\.\d{2}\.\d{2}$/;
+    const dateLikeRegex = /^\d{4}\.\d+\.\d+$/;
 
     const validTags = tagNames.filter(
       (tag) => simpleSemverRegex.test(tag) && !dateLikeRegex.test(tag),
     );
 
     // Sort tags in descending order (latest first)
-    validTags.sort((a, b) => {
-      if (a === b) return 0;
-      return a > b ? -1 : 1;
-    });
+    validTags.sort(compareSemVer).reverse();
 
     // Return the latest valid semver tag
     return validTags[0];
@@ -310,6 +309,7 @@ class Github {
     this.#packageTree = subPackages;
     return subPackages;
   }
+
   async allDescendantPackages(parent) {
     const tree = await this.getSubPackageTree();
     let descendants = [];
@@ -356,7 +356,6 @@ class Github {
     /* eslint-disable no-restricted-syntax, no-await-in-loop */
     for (const libRange of deps) {
       const pythonPackage = libRange.match(/^[^>=<;[\s]+/)[0];
-      let packageSet = [pythonPackage];
       console.log(`Processing library: ${pythonPackage}`);
       try {
         const url = await this.createBumpLibPullRequest({
@@ -455,7 +454,8 @@ class Github {
   }
 
   async createBumpLibPullRequest({
-    pythonPackage, verbose = false, dryRun = false, useCurrentRepo = false, includeSubpackages = false,
+    pythonPackage, verbose = false, dryRun = false,
+    useCurrentRepo = false, includeSubpackages = false,
   }) {
     const cwd = './';
     const shellOptions = {
@@ -485,8 +485,7 @@ class Github {
     for (const lib of pythonPackages) {
       try {
         await runShellCommand({ command: `pip-compile-multi --use-cache -P ${lib}`, ...shellOptions });
-      }
-      catch (error) {
+      } catch (error) {
         console.error(`Error bumping "${lib}":`, error);
       }
     }
@@ -506,15 +505,15 @@ class Github {
 
     let hasChanges = false;
     for (const lib of pythonPackages) {
-      const { before = null, after = null} = libsBeforeAfter[lib] || {};
+      const { before = null, after = null } = libsBeforeAfter[lib] || {};
       if (before !== after) {
         hasChanges = true;
         console.log(`Changes detected for "${lib}": ${before} -> ${after}`);
       }
     }
     if (hasChanges) {
-      const lib = pythonPackage;;
-      const { before = null, after = null} = libsBeforeAfter[lib] || {};
+      const lib = pythonPackage;
+      const { before = null, after = null } = libsBeforeAfter[lib] || {};
 
       let commitMessage = `chore(🦾): bump python ${lib} ${before} -> ${after}`;
       if (before === null || before === after) {

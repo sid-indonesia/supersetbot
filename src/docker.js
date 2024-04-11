@@ -34,7 +34,9 @@ export function getDockerTags({
   const tags = new Set();
   const tagChunks = [];
   const currentRelease = buildContext === 'release' ? buildContextRef : null;
-  const isLatest = latestRelease === currentRelease;
+  const isLatest = currentRelease && latestRelease
+    ? utils.compareSemVer(latestRelease, currentRelease) >= 0
+    : false;
 
   if (preset !== 'lean') {
     tagChunks.push(preset);
@@ -61,7 +63,7 @@ export function getDockerTags({
   if (isLatest || forceLatest) {
     console.log(`Tags: ${[...tags].join(', ')}`);
     tags.add(makeDockerTag(['latest', ...tagChunks]));
-    console.log("MAKE", makeDockerTag(['latest', ...tagChunks]));
+    console.log('MAKE', makeDockerTag(['latest', ...tagChunks]));
   }
 
   return [...tags];

@@ -1,4 +1,4 @@
-import { parsePinnedRequirements, mergeParsedRequirements } from './utils.js';
+import { parsePinnedRequirements, mergeParsedRequirements, compareSemVer } from './utils.js';
 
 describe('parsePinnedRequirements', () => {
   it('parses single dependency correctly', () => {
@@ -81,5 +81,42 @@ describe('mergeParsedRequirements', () => {
     const obj2 = { paramiko: ['bcrypt'] };
     const expected = { paramiko: ['bcrypt'] };
     expect(mergeParsedRequirements(obj1, obj2)).toEqual(expected);
+  });
+});
+
+describe('SemVer Comparison', () => {
+  test('correctly compares versions with leading zeros', () => {
+    expect(compareSemVer('1.01.1', '1.1.2')).toBe(-1);
+    expect(compareSemVer('1.1.01', '1.1.10')).toBe(-1);
+    expect(compareSemVer('01.1.1', '1.1.1')).toBe(0);
+  });
+
+  test('handles large version numbers correctly', () => {
+    expect(compareSemVer('1.2.3', '1.2.10')).toBe(-1);
+    expect(compareSemVer('1.10.2', '1.9.3')).toBe(1);
+    expect(compareSemVer('10.0.0', '2.10.10')).toBe(1);
+  });
+
+  test('compares versions where string comparison fails', () => {
+    expect(compareSemVer('1.10.0', '1.2.0')).toBe(1);
+    expect(compareSemVer('0.10.0', '0.9.0')).toBe(1);
+    expect(compareSemVer('10.1.1', '2.2.2')).toBe(1);
+    expect(compareSemVer('1.2.10', '1.2.2')).toBe(1);
+  });
+
+  test('handles versions with same major and minor but different patch versions', () => {
+    expect(compareSemVer('1.0.0', '1.0.1')).toBe(-1);
+    expect(compareSemVer('1.0.2', '1.0.2')).toBe(0);
+    expect(compareSemVer('1.0.3', '1.0.1')).toBe(1);
+  });
+
+  test('handles versions with same major but different minor versions', () => {
+    expect(compareSemVer('1.1.0', '1.2.0')).toBe(-1);
+    expect(compareSemVer('1.2.0', '1.1.5')).toBe(1);
+  });
+
+  test('compares versions with different major versions', () => {
+    expect(compareSemVer('1.0.0', '2.0.0')).toBe(-1);
+    expect(compareSemVer('2.0.0', '1.10.10')).toBe(1);
   });
 });

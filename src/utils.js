@@ -146,3 +146,16 @@ export function mergeParsedRequirements(obj1, obj2) {
   });
   return merged;
 }
+
+export function compareSemVer(a, b) {
+  const splitA = a.split('.').map(Number);
+  const splitB = b.split('.').map(Number);
+
+  // eslint-disable-next-line no-plusplus
+  for (let i = 0; i < 3; i++) {
+    if (splitA[i] > splitB[i]) return 1;
+    if (splitA[i] < splitB[i]) return -1;
+  }
+
+  return 0; // Versions are equal
+}

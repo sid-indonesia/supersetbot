@@ -103,8 +103,7 @@ export default function getCLI(context) {
         const github = new Github({ context });
         await github.rebase({ ...opts });
       });
-  }
-  else if (context.source === 'CLI') {
+  } else if (context.source === 'CLI') {
     program.command('release-label-prs')
       .description('Given a set of PRs, auto-release label them')
       .option('-s, --search <search>', 'extra search string to append using the GitHub mini-language')
@@ -195,7 +194,10 @@ export default function getCLI(context) {
         const buildContext = opts.context;
         const buildContextRef = opts.contextRef;
         const latestRelease = await github.getLatestReleaseTag();
-        const command = await docker.getDockerCommand({ ...opts, buildContext, buildContextRef, latestRelease });
+        console.log(`Latest release: ${latestRelease}`);
+        const command = await docker.getDockerCommand({
+          ...opts, buildContext, buildContextRef, latestRelease,
+        });
         context.log(command);
         if (!opts.dryRun) {
           utils.runShellCommand({ command, raiseOnError: false });
