@@ -321,7 +321,7 @@ class Github {
 
   async createAllBumpPRs({
     verbose = false, dryRun = false, useCurrentRepo = false, limit = null, shuffle = true,
-    group = null, excludeSubpackages = false,
+    group = null, includeSubpackages = false,
   }) {
     const cwd = process.cwd();
     const tomlFilePath = path.join(cwd, 'pyproject.toml');
@@ -359,7 +359,7 @@ class Github {
       console.log(`Processing library: ${pythonPackage}`);
       try {
         const url = await this.createBumpLibPullRequest({
-          pythonPackage, verbose, dryRun, useCurrentRepo, excludeSubpackages,
+          pythonPackage, verbose, dryRun, useCurrentRepo, includeSubpackages,
         });
         if (url) {
           prsCreated += 1;
@@ -455,7 +455,7 @@ class Github {
 
   async createBumpLibPullRequest({
     pythonPackage, verbose = false, dryRun = false,
-    useCurrentRepo = false, excludeSubpackages = false,
+    useCurrentRepo = false, includeSubpackages = false,
   }) {
     const cwd = './';
     const shellOptions = {
@@ -478,7 +478,7 @@ class Github {
 
     // Run pip-compile-multi
     let pythonPackages = [pythonPackage];
-    if (!excludeSubpackages) {
+    if (includeSubpackages) {
       pythonPackages = await this.allDescendantPackages(pythonPackage);
     }
     console.log('Packages to bump', pythonPackages);

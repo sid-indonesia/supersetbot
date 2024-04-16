@@ -167,7 +167,7 @@ export default function getCLI(context) {
       .option('-p, --python-package <pythonPackage>', 'name of the package to bump')
       .option('-g, --group <group>', 'specify a group of optional dependencies to bump')
       .option('-u, --use-current-repo', 'Uses the current repo instead of a temporary one')
-      .option('-e, --exclude-subpackages', 'Exclude subpackages bumps')
+      .option('-s, --include-subpackages', 'Include subpackages bumps')
       .option('-l, --limit <limit>', 'Limit the number of PRs to create', null, parseInt)
       .action(async function () {
         const opts = context.processOptions(this, ['repo']);
