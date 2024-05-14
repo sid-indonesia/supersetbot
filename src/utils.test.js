@@ -36,9 +36,9 @@ describe('parsePinnedRequirementsTree', () => {
             #   jsonschema
         `;
     expect(parsePinnedRequirementsTree(requirements)).toEqual({
-      cattrs: {deps: ['attrs'], version: null},
-      jsonschema: {deps: ['attrs'], version: null},
-      attrs: {deps: [], version: '23.1.0'},
+      cattrs: { deps: ['attrs'], version: null },
+      jsonschema: { deps: ['attrs'], version: null },
+      attrs: { deps: [], version: '23.1.0' },
     });
   });
 
@@ -78,29 +78,29 @@ describe('mergeParsedRequirementsTree', () => {
   });
 
   it('merges overlapping keys with unique dependencies correctly', () => {
-    const obj1 = { 'flask-migrate': {deps: ['alembic'] }};
-    const obj2 = { 'flask-migrate': {deps: ['async-timeout']}, paramiko: {deps:['bcrypt']} };
+    const obj1 = { 'flask-migrate': { deps: ['alembic'] } };
+    const obj2 = { 'flask-migrate': { deps: ['async-timeout'] }, paramiko: { deps: ['bcrypt'] } };
     const expected = {
-      'flask-migrate': {deps: ['alembic', 'async-timeout']},
-      paramiko: {deps: ['bcrypt']},
+      'flask-migrate': { deps: ['alembic', 'async-timeout'] },
+      paramiko: { deps: ['bcrypt'] },
     };
     expect(mergeParsedRequirementsTree(obj1, obj2)).toEqual(expected);
   });
 
   it('merges overlapping keys with duplicate dependencies correctly', () => {
-    const obj1 = { 'flask-migrate': {deps: ['alembic', 'async-timeout'] }};
-    const obj2 = { 'flask-migrate': {deps: ['alembic']}, paramiko: {deps: ['bcrypt'] }};
+    const obj1 = { 'flask-migrate': { deps: ['alembic', 'async-timeout'] } };
+    const obj2 = { 'flask-migrate': { deps: ['alembic'] }, paramiko: { deps: ['bcrypt'] } };
     const expected = {
-      'flask-migrate': {deps: ['alembic', 'async-timeout']},
-      paramiko: { deps: ['bcrypt']},
+      'flask-migrate': { deps: ['alembic', 'async-timeout'] },
+      paramiko: { deps: ['bcrypt'] },
     };
     expect(mergeParsedRequirementsTree(obj1, obj2)).toEqual(expected);
   });
 
   it('handles empty objects correctly', () => {
     const obj1 = {};
-    const obj2 = { paramiko: { deps: ['bcrypt'] }};
-    const expected = { paramiko: {deps: ['bcrypt'] }};
+    const obj2 = { paramiko: { deps: ['bcrypt'] } };
+    const expected = { paramiko: { deps: ['bcrypt'] } };
     expect(mergeParsedRequirementsTree(obj1, obj2)).toEqual(expected);
   });
 });

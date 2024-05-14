@@ -133,7 +133,7 @@ export function parsePinnedRequirementsTree(requirements) {
       currentDep = depMatch[1].trim();
       const version = depMatch[2].trim();
       if (depsObject[currentDep] === undefined) {
-        depsObject[currentDep] = { version, deps: []};
+        depsObject[currentDep] = { version, deps: [] };
       } else if (version) {
         depsObject[currentDep].version = version;
       }
@@ -141,7 +141,7 @@ export function parsePinnedRequirementsTree(requirements) {
       const viaLib = line.replace('# via', '').trim().replace('#', '').trim();
       if (viaLib) {
         if (depsObject[viaLib] === undefined) {
-          depsObject[viaLib] = {deps: [], version: null};
+          depsObject[viaLib] = { deps: [], version: null };
         }
         depsObject[viaLib].deps.push(currentDep);
       }
