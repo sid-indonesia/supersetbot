@@ -346,6 +346,9 @@ class Github {
       } else {
         deps = optDeps[group];
       }
+    } else {
+      const tree = await this.getSubPackageTree();
+      deps = Object.keys(tree);
     }
     if (shuffle) {
       deps = shuffleArray(deps);

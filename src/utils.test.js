@@ -51,6 +51,16 @@ describe('parsePinnedRequirementsTree', () => {
       alembic: { deps: [], version: '1.13.1' },
     });
   });
+  it('ignores lines with dash r', () => {
+    const requirements = `
+        -r requirements.txt
+        alembic==1.13.1
+            # via flask-migrate`;
+    expect(parsePinnedRequirementsTree(requirements)).toEqual({
+      'flask-migrate': { deps: ['alembic'], version: null },
+      alembic: { deps: [], version: '1.13.1' },
+    });
+  });
 });
 
 describe('mergeParsedRequirementsTree', () => {
