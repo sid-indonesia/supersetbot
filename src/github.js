@@ -8,7 +8,7 @@ import { throttling } from '@octokit/plugin-throttling';
 
 import { ORG_LIST, PROTECTED_LABEL_PATTERNS, COMMITTER_TEAM } from './metadata.js';
 import {
-  runShellCommand, shuffleArray, parsePinnedRequirements, mergeParsedRequirements,
+  runShellCommand, shuffleArray, parsePinnedRequirementsTree, mergeParsedRequirementsTree,
   compareSemVer,
 } from './utils.js';
 
@@ -303,8 +303,8 @@ class Github {
     for (const reqsFile of reqsFiles) {
       const reqsFilePath = path.join(cwd, reqsFile);
       const reqsData = await fs.promises.readFile(reqsFilePath, 'utf8');
-      const pinnedReqs = parsePinnedRequirements(reqsData);
-      subPackages = mergeParsedRequirements(subPackages, pinnedReqs);
+      const pinnedReqs = parsePinnedRequirementsTree(reqsData);
+      subPackages = mergeParsedRequirementsTree(subPackages, pinnedReqs);
     }
     this.#packageTree = subPackages;
     return subPackages;

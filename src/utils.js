@@ -108,7 +108,15 @@ export function shuffleArray(originalArray) {
   return array;
 }
 
-export function parsePinnedRequirements(requirements) {
+export function parsePinnedRequirementsTree(requirements) {
+  /* Parse the requirements file and return a tree of dependencies
+   * {
+   *   'lib1':{
+   *      version: '1.0.0',
+   *      deps: ['dep1', 'dep2'],
+   *    }
+   * }
+   */
   const lines = requirements
     .split('\n')
     .filter((line) => !line.startsWith('#')) // this removes comments at the top/bottom but not vias since they are indented
@@ -120,16 +128,22 @@ export function parsePinnedRequirements(requirements) {
   let currentDep = null;
 
   lines.forEach((line) => {
-    const depMatch = line.match(/^(.+)==/);
+    const depMatch = line.match(/^(.+)==(.*)/);
     if (depMatch) {
       currentDep = depMatch[1].trim();
+      const version = depMatch[2].trim();
+      if (depsObject[currentDep] === undefined) {
+        depsObject[currentDep] = { version, deps: []};
+      } else if (version) {
+        depsObject[currentDep].version = version;
+      }
     } else {
       const viaLib = line.replace('# via', '').trim().replace('#', '').trim();
       if (viaLib) {
-        if (!depsObject[viaLib]) {
-          depsObject[viaLib] = [];
+        if (depsObject[viaLib] === undefined) {
+          depsObject[viaLib] = {deps: [], version: null};
         }
-        depsObject[viaLib].push(currentDep);
+        depsObject[viaLib].deps.push(currentDep);
       }
     }
   });
@@ -137,12 +151,15 @@ export function parsePinnedRequirements(requirements) {
   return depsObject;
 }
 
-export function mergeParsedRequirements(obj1, obj2) {
+export function mergeParsedRequirementsTree(obj1, obj2) {
   const keys = new Set([...Object.keys(obj1), ...Object.keys(obj2)]);
   const merged = {};
 
   keys.forEach((key) => {
-    merged[key] = [...new Set([...(obj1[key] || []), ...(obj2[key] || [])])];
+    merged[key] = {
+      deps: [...new Set([...(obj1[key]?.deps || []), ...(obj2[key]?.deps || [])])],
+      version: obj1[key]?.version || obj2[key]?.version,
+    };
   });
   return merged;
 }

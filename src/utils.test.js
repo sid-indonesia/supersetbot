@@ -1,12 +1,13 @@
-import { parsePinnedRequirements, mergeParsedRequirements, compareSemVer } from './utils.js';
+import { parsePinnedRequirementsTree, mergeParsedRequirementsTree, compareSemVer } from './utils.js';
 
-describe('parsePinnedRequirements', () => {
+describe('parsePinnedRequirementsTree', () => {
   it('parses single dependency correctly', () => {
     const requirements = `\
         alembic==1.13.1
             # via flask-migrate`;
-    expect(parsePinnedRequirements(requirements)).toEqual({
-      'flask-migrate': ['alembic'],
+    expect(parsePinnedRequirementsTree(requirements)).toEqual({
+      'flask-migrate': { deps: ['alembic'], version: null },
+      alembic: { deps: [], version: '1.13.1' },
     });
   });
 
@@ -17,8 +18,13 @@ describe('parsePinnedRequirements', () => {
         async-timeout==4.0.2
             # via flask-migrate
         `;
-    expect(parsePinnedRequirements(requirements)).toEqual({
-      'flask-migrate': ['alembic', 'async-timeout'],
+    expect(parsePinnedRequirementsTree(requirements)).toEqual({
+      'flask-migrate': {
+        deps: ['alembic', 'async-timeout'],
+        version: null,
+      },
+      alembic: { deps: [], version: '1.13.1' },
+      'async-timeout': { deps: [], version: '4.0.2' },
     });
   });
 
@@ -29,9 +35,10 @@ describe('parsePinnedRequirements', () => {
             #   cattrs
             #   jsonschema
         `;
-    expect(parsePinnedRequirements(requirements)).toEqual({
-      cattrs: ['attrs'],
-      jsonschema: ['attrs'],
+    expect(parsePinnedRequirementsTree(requirements)).toEqual({
+      cattrs: {deps: ['attrs'], version: null},
+      jsonschema: {deps: ['attrs'], version: null},
+      attrs: {deps: [], version: '23.1.0'},
     });
   });
 
@@ -39,48 +46,52 @@ describe('parsePinnedRequirements', () => {
     const requirements = `
         alembic==1.13.1
             # via flask-migrate`;
-    expect(parsePinnedRequirements(requirements)).toEqual({
-      'flask-migrate': ['alembic'],
+    expect(parsePinnedRequirementsTree(requirements)).toEqual({
+      'flask-migrate': { deps: ['alembic'], version: null },
+      alembic: { deps: [], version: '1.13.1' },
     });
   });
 });
 
-describe('mergeParsedRequirements', () => {
+describe('mergeParsedRequirementsTree', () => {
   it('merges non-overlapping keys correctly', () => {
-    const obj1 = { 'flask-migrate': ['alembic'] };
-    const obj2 = { paramiko: ['bcrypt'] };
+    const obj1 = { 'flask-migrate': { deps: ['alembic'], version: '2.1.2' } };
+    const obj2 = { paramiko: { deps: ['bcrypt'], version: '3.1.1' } };
     const expected = {
-      'flask-migrate': ['alembic'],
-      paramiko: ['bcrypt'],
+      'flask-migrate': {
+        deps: ['alembic'],
+        version: '2.1.2',
+      },
+      paramiko: { deps: ['bcrypt'], version: '3.1.1' },
     };
-    expect(mergeParsedRequirements(obj1, obj2)).toEqual(expected);
+    expect(mergeParsedRequirementsTree(obj1, obj2)).toEqual(expected);
   });
 
   it('merges overlapping keys with unique dependencies correctly', () => {
-    const obj1 = { 'flask-migrate': ['alembic'] };
-    const obj2 = { 'flask-migrate': ['async-timeout'], paramiko: ['bcrypt'] };
+    const obj1 = { 'flask-migrate': {deps: ['alembic'] }};
+    const obj2 = { 'flask-migrate': {deps: ['async-timeout']}, paramiko: {deps:['bcrypt']} };
     const expected = {
-      'flask-migrate': ['alembic', 'async-timeout'],
-      paramiko: ['bcrypt'],
+      'flask-migrate': {deps: ['alembic', 'async-timeout']},
+      paramiko: {deps: ['bcrypt']},
     };
-    expect(mergeParsedRequirements(obj1, obj2)).toEqual(expected);
+    expect(mergeParsedRequirementsTree(obj1, obj2)).toEqual(expected);
   });
 
   it('merges overlapping keys with duplicate dependencies correctly', () => {
-    const obj1 = { 'flask-migrate': ['alembic', 'async-timeout'] };
-    const obj2 = { 'flask-migrate': ['alembic'], paramiko: ['bcrypt'] };
+    const obj1 = { 'flask-migrate': {deps: ['alembic', 'async-timeout'] }};
+    const obj2 = { 'flask-migrate': {deps: ['alembic']}, paramiko: {deps: ['bcrypt'] }};
     const expected = {
-      'flask-migrate': ['alembic', 'async-timeout'],
-      paramiko: ['bcrypt'],
+      'flask-migrate': {deps: ['alembic', 'async-timeout']},
+      paramiko: { deps: ['bcrypt']},
     };
-    expect(mergeParsedRequirements(obj1, obj2)).toEqual(expected);
+    expect(mergeParsedRequirementsTree(obj1, obj2)).toEqual(expected);
   });
 
   it('handles empty objects correctly', () => {
     const obj1 = {};
-    const obj2 = { paramiko: ['bcrypt'] };
-    const expected = { paramiko: ['bcrypt'] };
-    expect(mergeParsedRequirements(obj1, obj2)).toEqual(expected);
+    const obj2 = { paramiko: { deps: ['bcrypt'] }};
+    const expected = { paramiko: {deps: ['bcrypt'] }};
+    expect(mergeParsedRequirementsTree(obj1, obj2)).toEqual(expected);
   });
 });
 
