@@ -6,8 +6,8 @@ describe('parsePinnedRequirementsTree', () => {
         alembic==1.13.1
             # via flask-migrate`;
     expect(parsePinnedRequirementsTree(requirements)).toEqual({
-      'flask-migrate': { deps: ['alembic'], version: null },
-      alembic: { deps: [], version: '1.13.1' },
+      'flask-migrate': { deps: ['alembic'], version: null, vias: [] },
+      alembic: { deps: [], version: '1.13.1', vias: ['flask-migrate'] },
     });
   });
 
@@ -22,9 +22,10 @@ describe('parsePinnedRequirementsTree', () => {
       'flask-migrate': {
         deps: ['alembic', 'async-timeout'],
         version: null,
+        vias: [],
       },
-      alembic: { deps: [], version: '1.13.1' },
-      'async-timeout': { deps: [], version: '4.0.2' },
+      alembic: { deps: [], version: '1.13.1', vias: ['flask-migrate'] },
+      'async-timeout': { deps: [], version: '4.0.2', vias: ['flask-migrate'] },
     });
   });
 
@@ -36,9 +37,9 @@ describe('parsePinnedRequirementsTree', () => {
             #   jsonschema
         `;
     expect(parsePinnedRequirementsTree(requirements)).toEqual({
-      cattrs: { deps: ['attrs'], version: null },
-      jsonschema: { deps: ['attrs'], version: null },
-      attrs: { deps: [], version: '23.1.0' },
+      cattrs: { deps: ['attrs'], version: null, vias: [] },
+      jsonschema: { deps: ['attrs'], version: null, vias: [] },
+      attrs: { deps: [], version: '23.1.0', vias: ['cattrs', 'jsonschema'] },
     });
   });
 
@@ -47,18 +48,18 @@ describe('parsePinnedRequirementsTree', () => {
         alembic==1.13.1
             # via flask-migrate`;
     expect(parsePinnedRequirementsTree(requirements)).toEqual({
-      'flask-migrate': { deps: ['alembic'], version: null },
-      alembic: { deps: [], version: '1.13.1' },
+      'flask-migrate': { deps: ['alembic'], version: null, vias: [] },
+      alembic: { deps: [], version: '1.13.1', vias: ['flask-migrate'] },
     });
   });
   it('ignores lines with dash r', () => {
     const requirements = `
-        -r requirements.txt
+        # -r requirements.txt
         alembic==1.13.1
             # via flask-migrate`;
     expect(parsePinnedRequirementsTree(requirements)).toEqual({
-      'flask-migrate': { deps: ['alembic'], version: null },
-      alembic: { deps: [], version: '1.13.1' },
+      'flask-migrate': { deps: ['alembic'], version: null, vias: [] },
+      alembic: { deps: [], version: '1.13.1', vias: ['flask-migrate'] },
     });
   });
 });
@@ -71,8 +72,9 @@ describe('mergeParsedRequirementsTree', () => {
       'flask-migrate': {
         deps: ['alembic'],
         version: '2.1.2',
+        vias: [],
       },
-      paramiko: { deps: ['bcrypt'], version: '3.1.1' },
+      paramiko: { deps: ['bcrypt'], version: '3.1.1', vias: [] },
     };
     expect(mergeParsedRequirementsTree(obj1, obj2)).toEqual(expected);
   });
@@ -81,8 +83,8 @@ describe('mergeParsedRequirementsTree', () => {
     const obj1 = { 'flask-migrate': { deps: ['alembic'] } };
     const obj2 = { 'flask-migrate': { deps: ['async-timeout'] }, paramiko: { deps: ['bcrypt'] } };
     const expected = {
-      'flask-migrate': { deps: ['alembic', 'async-timeout'] },
-      paramiko: { deps: ['bcrypt'] },
+      'flask-migrate': { deps: ['alembic', 'async-timeout'], vias: [] },
+      paramiko: { deps: ['bcrypt'], vias: [] },
     };
     expect(mergeParsedRequirementsTree(obj1, obj2)).toEqual(expected);
   });
@@ -91,8 +93,8 @@ describe('mergeParsedRequirementsTree', () => {
     const obj1 = { 'flask-migrate': { deps: ['alembic', 'async-timeout'] } };
     const obj2 = { 'flask-migrate': { deps: ['alembic'] }, paramiko: { deps: ['bcrypt'] } };
     const expected = {
-      'flask-migrate': { deps: ['alembic', 'async-timeout'] },
-      paramiko: { deps: ['bcrypt'] },
+      'flask-migrate': { deps: ['alembic', 'async-timeout'], vias: [], version: undefined },
+      paramiko: { deps: ['bcrypt'], vias: [], version: undefined },
     };
     expect(mergeParsedRequirementsTree(obj1, obj2)).toEqual(expected);
   });
@@ -100,7 +102,7 @@ describe('mergeParsedRequirementsTree', () => {
   it('handles empty objects correctly', () => {
     const obj1 = {};
     const obj2 = { paramiko: { deps: ['bcrypt'] } };
-    const expected = { paramiko: { deps: ['bcrypt'] } };
+    const expected = { paramiko: { deps: ['bcrypt'], vias: [] } };
     expect(mergeParsedRequirementsTree(obj1, obj2)).toEqual(expected);
   });
 });

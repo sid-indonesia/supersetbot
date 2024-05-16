@@ -121,8 +121,9 @@ export function parsePinnedRequirementsTree(requirements) {
     .split('\n')
     .filter((line) => !line.startsWith('#')) // this removes comments at the top/bottom but not vias since they are indented
     .map((line) => line.trim().toLowerCase())
-    .filter((line) => !line.startsWith('-')) // this removes funky lines refing other files
-    .filter((line) => !!line);
+    .filter((line) => !line.startsWith('# via -r ')) // this removes funky lines refing other files
+    .filter((line) => !line.startsWith('-e ')) // this removes funky lines refing other files
+    .filter((line) => !!line); // this removes empty lines
 
   const depsObject = {};
   let currentDep = null;
@@ -132,22 +133,30 @@ export function parsePinnedRequirementsTree(requirements) {
     if (depMatch) {
       currentDep = depMatch[1].trim();
       const version = depMatch[2].trim();
-      if (depsObject[currentDep] === undefined) {
-        depsObject[currentDep] = { version, deps: [] };
+      if (currentDep && depsObject[currentDep] === undefined) {
+        depsObject[currentDep] = {
+          version, vias: [], deps: [],
+        };
       } else if (version) {
         depsObject[currentDep].version = version;
       }
     } else {
       const viaLib = line.replace('# via', '').trim().replace('#', '').trim();
-      if (viaLib) {
+      if (viaLib && currentDep) {
         if (depsObject[viaLib] === undefined) {
-          depsObject[viaLib] = { deps: [], version: null };
+          depsObject[viaLib] = {
+            deps: [], version: null, vias: [],
+          };
         }
         depsObject[viaLib].deps.push(currentDep);
+
+        if (depsObject[currentDep] === undefined) {
+          depsObject[currentDep] = { deps: [], version: null, vias: [] };
+        }
+        depsObject[currentDep].vias.push(viaLib);
       }
     }
   });
-
   return depsObject;
 }
 
@@ -158,6 +167,7 @@ export function mergeParsedRequirementsTree(obj1, obj2) {
   keys.forEach((key) => {
     merged[key] = {
       deps: [...new Set([...(obj1[key]?.deps || []), ...(obj2[key]?.deps || [])])],
+      vias: [...new Set([...(obj1[key]?.vias || []), ...(obj2[key]?.vias || [])])],
       version: obj1[key]?.version || obj2[key]?.version,
     };
   });
