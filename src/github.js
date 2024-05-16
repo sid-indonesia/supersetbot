@@ -515,7 +515,10 @@ class Github {
         console.log(`Changes detected for "${lib}": ${before} -> ${after}`);
       }
     }
-    if (hasChanges) {
+    if (!hasChanges) {
+      console.log("No changes detected");
+    }
+    else {
       const lib = pythonPackage;
       const { before = null, after = null } = libsBeforeAfter[lib] || {};
 
