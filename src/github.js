@@ -293,7 +293,7 @@ class Github {
     return PROTECTED_LABEL_PATTERNS.some((pattern) => new RegExp(pattern).test(label));
   }
 
-  async getSubPackageTree() {
+  async getSubPackageTree({ onlyBase = false }) {
     if (this.#packageTree) {
       return this.#packageTree;
     }
@@ -301,6 +301,10 @@ class Github {
     const cwd = process.cwd();
     /* eslint-disable no-restricted-syntax, no-await-in-loop */
     for (const reqsFile of reqsFiles) {
+      if (onlyBase && reqsFile !== 'requirements/base.txt') {
+        // eslint-disable-next-line no-continue
+        continue;
+      }
       const reqsFilePath = path.join(cwd, reqsFile);
       const reqsData = await fs.promises.readFile(reqsFilePath, 'utf8');
       const pinnedReqs = parsePinnedRequirementsTree(reqsData);
@@ -321,7 +325,7 @@ class Github {
 
   async createAllBumpPRs({
     verbose = false, dryRun = false, useCurrentRepo = false, limit = null, shuffle = true,
-    group = null, includeSubpackages = false,
+    group = null, includeSubpackages = false, onlyBase = false,
   }) {
     const cwd = process.cwd();
     const tomlFilePath = path.join(cwd, 'pyproject.toml');
@@ -347,7 +351,7 @@ class Github {
         deps = optDeps[group];
       }
     } else {
-      const tree = await this.getSubPackageTree();
+      const tree = await this.getSubPackageTree({ onlyBase });
       deps = Object.keys(tree);
     }
     if (shuffle) {
@@ -538,7 +542,7 @@ class Github {
       // Make a tree representation of the dependencies
       const tree = await this.getSubPackageTree();
       let depTree = '';
-      // eslint-disable-next-line no-inner-declaration
+      // eslint-disable-next-line no-inner-declarations
       function recurseVias(library, level = 0) {
         depTree += `${'  '.repeat(level) + library}\n`;
         tree[library].vias.forEach((child) => recurseVias(child, level + 1));
