@@ -358,7 +358,7 @@ class Github {
       deps = shuffleArray(deps);
     }
 
-    console.log('Processing libraries:', deps);
+    console.log(`Processing ${deps.length} libraries:`, deps);
 
     /* eslint-disable no-restricted-syntax, no-await-in-loop */
     for (const libRange of deps) {
