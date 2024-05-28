@@ -293,7 +293,7 @@ class Github {
     return PROTECTED_LABEL_PATTERNS.some((pattern) => new RegExp(pattern).test(label));
   }
 
-  async getSubPackageTree({ onlyBase = false }) {
+  async getSubPackageTree({ onlyBase = false } = {}) {
     if (this.#packageTree) {
       return this.#packageTree;
     }
