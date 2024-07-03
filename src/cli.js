@@ -131,12 +131,16 @@ export default function getCLI(context) {
         for (const { prId, labels } of prsTargetLabel) {
           // Running sequentially to avoid rate limiting
           // eslint-disable-next-line no-await-in-loop
-          await github.syncLabels({
-            labels,
-            existingLabels: prIdLabelMap.get(prId).map((l) => l.name),
-            prId,
-            ...opts,
-          });
+          try {
+            await github.syncLabels({
+              labels,
+              existingLabels: prIdLabelMap.get(prId).map((l) => l.name),
+              prId,
+              ...opts,
+            });
+          } catch (error) {
+            console.error(`Failed to sync labels for PR ID ${prId}:`, error);
+          }
         }
       });
 
