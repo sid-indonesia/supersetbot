@@ -71,6 +71,7 @@ export function getDockerTags({
 
 export async function getDockerCommand({
   preset, platform, buildContext, buildContextRef, forceLatest = false, latestRelease = null,
+  extraFlags = '',
 }) {
   const platforms = platform;
 
@@ -130,6 +131,7 @@ export async function getDockerCommand({
       --label base=${pyVer} \\
       --label build_actor=${actor} \\
       ${versionLabel} \\
+      ${extraFlags} \\
       ${dockerContext}
   `;
 }

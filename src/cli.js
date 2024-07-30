@@ -191,6 +191,7 @@ export default function getCLI(context) {
       .option('-r, --context-ref <ref>', 'Reference to the PR, release, or branch')
       .option('-p, --platform <platform...>', 'Platforms (multiple values allowed)')
       .option('-f, --force-latest', 'Force the "latest" tag on the release')
+      .option('-x, --extra-flags <extraFlags>', 'Pass a extra flags to the docker build command')
       .option('-v, --verbose', 'Print more info')
       .action(async function () {
         const opts = context.processOptions(this, ['preset', 'repo']);
@@ -198,10 +199,11 @@ export default function getCLI(context) {
         const github = new Github({ context });
         const buildContext = opts.context;
         const buildContextRef = opts.contextRef;
+        const extraFlags = opts.extraFlags;
         const latestRelease = await github.getLatestReleaseTag();
         console.log(`Latest release: ${latestRelease}`);
         const command = await docker.getDockerCommand({
-          ...opts, buildContext, buildContextRef, latestRelease,
+          ...opts, buildContext, buildContextRef, latestRelease, extraFlags,
         });
         context.log(command);
         if (!opts.dryRun) {

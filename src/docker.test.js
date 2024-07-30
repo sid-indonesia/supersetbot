@@ -230,6 +230,7 @@ describe('getDockerCommand', () => {
       SHA,
       'push',
       'master',
+      '',
       [`-t ${REPO}:master `],
     ],
     [
@@ -238,7 +239,17 @@ describe('getDockerCommand', () => {
       SHA,
       'push',
       'master',
+      '',
       ['--load', `-t ${REPO}:master-dev `],
+    ],
+    [
+      'dev',
+      ['linux/amd64'],
+      SHA,
+      'push',
+      'master',
+      '--cpus 1',
+      ['--cpus 1'],
     ],
     // multi-platform
     [
@@ -247,11 +258,12 @@ describe('getDockerCommand', () => {
       SHA,
       'push',
       'master',
+      '',
       ['--platform linux/arm64,linux/amd64'],
     ],
-  ])('returns expected docker command', async (preset, platform, sha, buildContext, buildContextRef, contains) => {
+  ])('returns expected docker command', async (preset, platform, sha, buildContext, buildContextRef, extraFlags, contains) => {
     const cmd = await dockerUtils.getDockerCommand({
-      preset, platform, sha, buildContext, buildContextRef, latestRelease: NEW_REL,
+      preset, platform, sha, buildContext, buildContextRef, extraFlags, latestRelease: NEW_REL,
     });
     contains.forEach((expectedSubstring) => {
       expect(cmd).toContain(expectedSubstring);
