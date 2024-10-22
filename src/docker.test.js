@@ -5,7 +5,7 @@ const SHA = '22e7c602b9aa321ec7e0df4bb0033048664dcdf0';
 const PR_ID = '666';
 const OLD_REL = '2.1.0';
 const NEW_REL = '2.1.1';
-const REPO = 'apache/superset';
+const REPO = 'summitdeveloper/superset';
 
 jest.mock('./github.js', () => jest.fn().mockImplementation(() => NEW_REL));
 

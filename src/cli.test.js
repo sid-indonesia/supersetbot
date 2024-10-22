@@ -1,7 +1,7 @@
 import { runShellCommand } from './utils';
 
 beforeEach(() => {
-  process.env.GITHUB_REPOSITORY = 'apache/superset';
+  process.env.GITHUB_REPOSITORY = 'sid-indonesia/superset';
 });
 
 afterEach(() => {

@@ -21,7 +21,7 @@ describe('runCommandFromGithubAction', () => {
     jest.clearAllMocks();
     originalEnv = process.env;
     process.env.GITHUB_ISSUE_NUMBER = '666';
-    process.env.GITHUB_REPOSITORY = 'apache/superset';
+    process.env.GITHUB_REPOSITORY = 'sid-indonesia/superset';
   });
 
   it('should strip the command', async () => {
